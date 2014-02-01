@@ -5,7 +5,12 @@
 	"bin": {
 		"amdize": "./build.js"
 	},
-	"repositories": [],
+	"repositories": [
+		{
+			'type': 'git'
+			'url': 'https://github.com/zhuxw/amdize'
+		}
+	],
 	"dependencies": {
 		"optimist": "*"
 	}

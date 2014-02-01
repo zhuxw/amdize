@@ -1,19 +1,23 @@
 // AMD-ize source code by concatenating files and wrapping define.
 
 var optimist = require('optimist');
-var argv = optimist.usage('node amdize <main file>').options({
+var argv = optimist.usage('Usage: node amdize [options] <main file>').options({
 	mode: {
 		alias: 'm',
 		'default': 'amd',
-		description: 'Module system to use, default to amd.'
+		description: 'Module system to use'
 	},
 	'name-maps': {
 		alias: 'n',
-		description: 'Files separted by comma, mapping from module path to variable name.'
+		description: 'Files separted by comma, mapping from module path to variable name'
 	},
 	dojo: {
 		'boolean': true,
-		description: 'Use default dojo mappings'
+		description: 'Use default dojo name maps'
+	},
+	basepath: {
+		alias: 'b',
+		description: 'Base path that modules are relative to, defaults to the dir of the main file'
 	},
 	exclude: {
 		alias: 'e',
@@ -21,7 +25,7 @@ var argv = optimist.usage('node amdize <main file>').options({
 	},
 	'return': {
 		alias: 'r',
-		description: 'Name to be exposed, default to main file name.'
+		description: 'Name to be exposed, defaults to the basename of the mail file.'
 	},
 	help: {
 		alias: 'h',
@@ -30,34 +34,37 @@ var argv = optimist.usage('node amdize <main file>').options({
 	}
 }).argv;
 
+//main-------------------------------------------------------------
 if(argv.help){
 	optimist.showHelp();
 	process.exit(0);
 }
 
 var fs = require('fs');
-var os = require('os');
 var path = require('path');
+var os = require('os');
+var jsfileRE = /\.js$/;
+var JS_EXT = '.js';
+var AMDIZE_EXT = '.amdize.js';
+var dependRE = /^(["']).+\1;/;
+var commentsRE = /(^\/\/)/;
 
-//main-------------------------------------------------------------
 var mainFile = path.resolve(process.cwd(), argv._[0]);
-
 console.log(connectFiles(processFile(mainFile, {
 	dict: {},
 	externalDepends: {},
-	basePath: path.dirname(mainFile),
-	returnName: argv['return'] || path.basename(mainFile, '.js'),
+	basePath: argv.basepath || path.dirname(mainFile),
+	returnName: argv.r || path.basename(mainFile, JS_EXT),
 	nameMap: getNameMap(),
-	modes: getModes()
+	modes: getModes(),
+	excluded: getExcludedFiles()
 })));
 
 //functions--------------------------------------------------------
 function getModes(){
 	var modes = {};
-	var modeDir = path.join(__dirname, 'modes');
-	var modeNames = fs.readdirSync(modeDir);
-	modeNames.forEach(function(modeFile){
-		var mode = path.basename(modeFile, '.js');
+	fs.readdirSync(path.join(__dirname, 'modes')).forEach(function(modeFile){
+		var mode = path.basename(modeFile, JS_EXT);
 		modes[mode] = require('./modes/' + mode);
 	});
 	return modes;
@@ -71,6 +78,9 @@ function getNameMap(){
 	}
 	fileNames.forEach(function(fileName){
 		fileName = path.resolve(process.cwd(), fileName);
+		if(!jsfileRE.test(fileName)){
+			fileName += AMDIZE_EXT;
+		}
 		try{
 			maps.push(require(fileName).map);
 		}catch(e){
@@ -86,44 +96,53 @@ function getNameMap(){
 	return map;
 }
 
+function getExcludedFiles(){
+	var ret = {};
+	(argv.exclude ? argv.exclude.split(',') : []).forEach(function(file){
+		ret[file] = 1;
+	});
+	return ret;
+}
+
 function getFilePath(file, basePath){
-	if(!(/\.js$/).test(file)){
-		file += '.js';
+	if(!jsfileRE.test(file)){
+		file += JS_EXT;
 	}
 	return path.resolve(basePath, file);
 }
 
 function processFile(file, args){
-	var filePath = getFilePath(file, args.basePath);
-	var data = fs.readFileSync(filePath, 'utf-8');
-	var dataArr = data.split(os.EOL);
-	var depends = [];
-	var start = 0;
-	dataArr.some(function(line, i){
-		line = line.trim();
-		if(/^(["']).+\1;$/.test(line)){
-			line = line.replace(/["']/g, '').replace(/;/g, '');
-			var depFile = getFilePath(line, args.basePath);
-			if(fs.existsSync(depFile)){
-				depends.push(line);
-			}else{
-				args.externalDepends[line] = 1;
+	if(!args.excluded[file] && !args.dict[file]){
+		var filePath = getFilePath(file, args.basePath);
+		var data = fs.readFileSync(filePath, 'utf-8');
+		var dataArr = data.split(os.EOL);
+		var depends = [];
+		var start = 0;
+		dataArr.some(function(line, i){
+			line = line.trim();
+			if(dependRE.test(line)){
+				line = line.replace(/["']/g, '').replace(/;.*$/, '');
+				var depFile = getFilePath(line, args.basePath);
+				if(fs.existsSync(depFile)){
+					depends.push(line);
+				}else{
+					args.externalDepends[line] = 1;
+				}
+				return false;
+			}else if(!commentsRE.test(line)){
+				start = i;
+				return true;
 			}
-			return false;
-		}else{
-			start = i;
-			return true;
-		}
-	});
-	var content = dataArr.slice(start).join(os.EOL);
-	args.dict[file] = {
-		depends: depends,
-		relPath: file,
-		data: content
-	};
-	depends.forEach(function(dep){
-		processFile(dep, args);
-	});
+		});
+		var content = dataArr.slice(start).join(os.EOL);
+		args.dict[file] = {
+			depends: depends,
+			data: content
+		};
+		depends.forEach(function(dep){
+			processFile(dep, args);
+		});
+	}
 	return args;
 }
 

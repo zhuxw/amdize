@@ -2,6 +2,6 @@
 cd /d %~dp0
 cd ..\..
 
-node amdize tests\project1\a.js
+node build tests\project1\a.js > tests\project1\out.js
 
 pause
