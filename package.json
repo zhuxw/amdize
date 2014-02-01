@@ -5,10 +5,12 @@
 	"bin": {
 		"amdize": "./main.js"
 	},
+	"author": "oliverzhu <zhuxw1984@gmail.com>",
+	"keywords": ["amd", "build", "cmd", "compress"],
 	"repositories": [
 		{
-			'type': 'git'
-			'url': 'https://github.com/zhuxw/amdize'
+			"type": "git",
+			"url": "https://github.com/zhuxw/amdize"
 		}
 	],
 	"dependencies": {
