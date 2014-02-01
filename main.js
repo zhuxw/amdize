@@ -18,8 +18,9 @@ function build(argv){
 		returnName: argv['return'] || path.basename(mainFile, JS_EXT),
 		nameMap: getNameMap(argv),
 		modes: getModes(),
-		excluded: getExcludedFiles(argv)
-	}), argv);
+		excluded: getExcludedFiles(argv),
+		substitute: getSubstitutePairs(argv)
+	}, argv), argv);
 }
 
 module.exports = build;
@@ -70,11 +71,29 @@ function getExcludedFiles(argv){
 	return ret;
 }
 
+function getSubstitutePairs(argv){
+	var pairs = {};
+	var s = argv.substitute ? argv.substitute.split(',') : [];
+	for(var i = 0; i < s.length; ++i){
+		var p = s[i].trim().split(':');
+		pairs[p[0]] = p[1];
+	}
+	return pairs;
+}
+
 function getFilePath(file, basePath){
 	if(!jsfileRE.test(file)){
 		file += JS_EXT;
 	}
 	return path.resolve(basePath, file);
+}
+
+function substitute(line, pairs){
+	for(var name in pairs){
+		var re = new RegExp("\\$\\{" + name + "\\}", 'g');
+		line = line.replace(re, pairs[name]);
+	}
+	return line;
 }
 
 function processFile(file, args){
@@ -88,6 +107,7 @@ function processFile(file, args){
 			line = line.trim();
 			if(dependRE.test(line)){
 				line = line.replace(/["']/g, '').replace(/;.*$/, '');
+				line = substitute(line, args.substitute);
 				var depFile = getFilePath(line, args.basePath);
 				if(fs.existsSync(depFile)){
 					depends.push(line);
