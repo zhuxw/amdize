@@ -1,45 +1,5 @@
 // AMD-ize source code by concatenating files and wrapping define.
 
-var optimist = require('optimist');
-var argv = optimist.usage('Usage: amdize [options] <main file> > <output file>').options({
-	mode: {
-		alias: 'm',
-		'default': 'amd',
-		description: 'Module system to use'
-	},
-	'name-maps': {
-		alias: 'n',
-		description: 'Files separted by comma, mapping from module path to variable name'
-	},
-	dojo: {
-		'boolean': true,
-		description: 'Use default dojo name maps'
-	},
-	basepath: {
-		alias: 'b',
-		description: 'Base path that modules are relative to, defaults to the dir of the main file'
-	},
-	exclude: {
-		alias: 'e',
-		description: 'Modules to exclude during building'
-	},
-	'return': {
-		alias: 'r',
-		description: 'Name to be exposed, defaults to the basename of the mail file.'
-	},
-	help: {
-		alias: 'h',
-		'boolean': true,
-		description: 'Show help message.'
-	}
-}).argv;
-
-//main-------------------------------------------------------------
-if(argv.help){
-	optimist.showHelp();
-	process.exit(0);
-}
-
 var fs = require('fs');
 var path = require('path');
 var os = require('os');
@@ -49,16 +9,20 @@ var AMDIZE_EXT = '.amdize.js';
 var dependRE = /^(["']).+\1;/;
 var commentsRE = /(^\/\/)/;
 
-var mainFile = path.resolve(process.cwd(), argv._[0]);
-console.log(connectFiles(processFile(mainFile, {
-	dict: {},
-	externalDepends: {},
-	basePath: argv.basepath || path.dirname(mainFile),
-	returnName: argv.r || path.basename(mainFile, JS_EXT),
-	nameMap: getNameMap(),
-	modes: getModes(),
-	excluded: getExcludedFiles()
-})));
+function build(argv){
+	var mainFile = path.resolve(process.cwd(), argv.mainFile);
+	return connectFiles(processFile(mainFile, {
+		dict: {},
+		externalDepends: {},
+		basePath: argv.basepath || path.dirname(mainFile),
+		returnName: argv['return'] || path.basename(mainFile, JS_EXT),
+		nameMap: getNameMap(argv),
+		modes: getModes(),
+		excluded: getExcludedFiles(argv)
+	}), argv);
+}
+
+module.exports = build;
 
 //functions--------------------------------------------------------
 function getModes(){
@@ -72,8 +36,8 @@ function getModes(){
 	return modes;
 }
 
-function getNameMap(){
-	var fileNames = argv.n ? argv.n.split(',') : [];
+function getNameMap(argv){
+	var fileNames = argv['name-maps'] ? argv['name-maps'].split(',') : [];
 	var maps = [];
 	if(argv.dojo){
 		maps.push(require('./dojo.amdize').map);
@@ -98,7 +62,7 @@ function getNameMap(){
 	return map;
 }
 
-function getExcludedFiles(){
+function getExcludedFiles(argv){
 	var ret = {};
 	(argv.exclude ? argv.exclude.split(',') : []).forEach(function(file){
 		ret[file] = 1;
@@ -170,8 +134,8 @@ function findRootNodes(dict){
 	return roots;
 }
 
-function connectFiles(args){
-	var mode = args.modes[argv.mode];
+function connectFiles(args, argv){
+	var mode = args.modes[argv.mode || 'amd'];
 	var head = mode ? mode.head(args) : '';
 	var foot = mode ? mode.foot(args) : '';
 	var output = [head];

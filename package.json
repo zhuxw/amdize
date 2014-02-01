@@ -3,7 +3,7 @@
 	"version": "0.0.1",
 	"description": "AMD-ize JavaScript source files",
 	"bin": {
-		"amdize": "./main"
+		"amdize": "./bin/amdize"
 	},
 	"main": "./main",
 	"author": "oliverzhu <zhuxw1984@gmail.com>",
@@ -16,5 +16,8 @@
 	],
 	"dependencies": {
 		"optimist": "*"
+	},
+	"engines": {
+		"node": "*"
 	}
 }
