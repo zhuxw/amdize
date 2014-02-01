@@ -1,6 +1,6 @@
 @echo off
 cd /d %~dp0
 
-node ../build -h
+node ../main -h
 
 pause

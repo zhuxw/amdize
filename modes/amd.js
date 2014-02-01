@@ -3,7 +3,6 @@ var os = require('os');
 exports.head = function(args){
 	var deps = [];
 	var sb = ['define([', os.EOL];
-	var nameMap = args.nameMap;
 	var localNames = [];
 	for(var dojoDep in args.externalDepends){
 		deps.push(dojoDep);
@@ -11,7 +10,7 @@ exports.head = function(args){
 	deps.sort();
 	for(var i = 0; i < deps.length; ++i){
 		sb.push('\t"', deps[i], '"', (i == deps.length - 1 ? '' : ','), os.EOL);
-		localNames.push(nameMap[deps[i]]);
+		localNames.push(args.nameMap[deps[i]]);
 	}
 	sb.push('], function(');
 	sb.push(localNames.join(', '));

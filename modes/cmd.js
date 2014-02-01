@@ -1,21 +1,16 @@
 var os = require('os');
 
 exports.head = function(args){
+	var sb = ['define(function(require, exports, module){', os.EOL];
 	var deps = [];
-	var sb = ['define([', os.EOL];
-	var nameMap = args.nameMap;
-	var localNames = [];
 	for(var dojoDep in args.externalDepends){
 		deps.push(dojoDep);
 	}
 	deps.sort();
-	for(var i = 0; i < deps.length; ++i){
-		sb.push('\t"', deps[i], '"', (i == deps.length - 1 ? '' : ','), os.EOL);
-		localNames.push(nameMap[deps[i]]);
-	}
-	sb.push('], function(');
-	sb.push(localNames.join(', '));
-	sb.push('){', os.EOL);
+	deps.forEach(function(dep){
+		sb.push('\tvar ', args.nameMap[dep], ' = require("', dep, '");', os.EOL);
+	});
+	sb.push(os.EOL);
 	return sb.join('');
 };
 

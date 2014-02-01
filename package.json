@@ -3,7 +3,7 @@
 	"version": "0.0.1",
 	"description": "AMD-ize JavaScript source files",
 	"bin": {
-		"amdize": "./build.js"
+		"amdize": "./main.js"
 	},
 	"repositories": [
 		{

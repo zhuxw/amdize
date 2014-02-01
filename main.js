@@ -1,7 +1,7 @@
 // AMD-ize source code by concatenating files and wrapping define.
 
 var optimist = require('optimist');
-var argv = optimist.usage('Usage: node amdize [options] <main file>').options({
+var argv = optimist.usage('Usage: amdize [options] <main file> > <output file>').options({
 	mode: {
 		alias: 'm',
 		'default': 'amd',
@@ -64,8 +64,10 @@ console.log(connectFiles(processFile(mainFile, {
 function getModes(){
 	var modes = {};
 	fs.readdirSync(path.join(__dirname, 'modes')).forEach(function(modeFile){
-		var mode = path.basename(modeFile, JS_EXT);
-		modes[mode] = require('./modes/' + mode);
+		if(jsfileRE.test(modeFile)){
+			var mode = path.basename(modeFile, JS_EXT);
+			modes[mode] = require('./modes/' + mode);
+		}
 	});
 	return modes;
 }
