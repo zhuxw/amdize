@@ -1,0 +1,50 @@
+#!/usr/bin/env node
+
+var optimist = require('optimist');
+var argv = optimist.usage('Usage: amdize [options] <main file> > <output file>').options({
+	mode: {
+		alias: 'm',
+		'default': 'amd',
+		description: 'Module system to use'
+	},
+	'name-maps': {
+		alias: 'n',
+		description: 'Files separted by comma, mapping from module path to variable name'
+	},
+	dojo: {
+		'boolean': true,
+		description: 'Use default dojo name maps'
+	},
+	basepath: {
+		alias: 'b',
+		description: 'Base path that modules are relative to, defaults to the dir of the main file'
+	},
+	exclude: {
+		alias: 'e',
+		description: 'Modules to exclude during building'
+	},
+	'return': {
+		alias: 'r',
+		description: 'Name to be exposed, defaults to the basename of the mail file.'
+	},
+	help: {
+		alias: 'h',
+		'boolean': true,
+		description: 'Show help message.'
+	}
+}).argv;
+
+if(argv.help){
+	optimist.showHelp();
+	process.exit(0);
+}
+
+if(argv._.length){
+	argv.mainFile = argv._[0];
+	var build = require('../main');
+	console.log(build(argv));
+}else{
+	optimist.showHelp();
+	process.exit(1);
+}
+
