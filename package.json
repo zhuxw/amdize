@@ -3,14 +3,15 @@
 	"version": "0.0.1",
 	"description": "AMD-ize JavaScript source files",
 	"bin": {
-		"amdize": "./main.js"
+		"amdize": "./main"
 	},
+	"main": "./main",
 	"author": "oliverzhu <zhuxw1984@gmail.com>",
 	"keywords": ["amd", "build", "cmd", "compress"],
 	"repositories": [
 		{
 			"type": "git",
-			"url": "https://github.com/zhuxw/amdize"
+			"url": "https://github.com/zhuxw/amdize.git"
 		}
 	],
 	"dependencies": {
