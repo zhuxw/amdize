@@ -12,6 +12,7 @@ var commentsRE = /(^\/\/)/;
 function build(argv){
 	var mainFile = path.resolve(process.cwd(), argv.mainFile);
 	return connectFiles(processFile(mainFile, {
+		argv: argv,
 		dict: {},
 		externalDepends: {},
 		basePath: argv.basepath || path.dirname(mainFile),
@@ -20,7 +21,7 @@ function build(argv){
 		modes: getModes(),
 		excluded: getExcludedFiles(argv),
 		substitute: getSubstitutePairs(argv)
-	}, argv), argv);
+	}));
 }
 
 module.exports = build;
@@ -73,6 +74,9 @@ function getExcludedFiles(argv){
 
 function getSubstitutePairs(argv){
 	var pairs = {};
+	if(argv.dojo){
+		pairs.ui = 'dijit';
+	}
 	var s = argv.substitute ? argv.substitute.split(',') : [];
 	for(var i = 0; i < s.length; ++i){
 		var p = s[i].trim().split(':');
@@ -154,7 +158,8 @@ function findRootNodes(dict){
 	return roots;
 }
 
-function connectFiles(args, argv){
+function connectFiles(args){
+	var argv = args.argv;
 	var mode = args.modes[argv.mode || 'amd'];
 	var head = mode ? mode.head(args) : '';
 	var foot = mode ? mode.foot(args) : '';
