@@ -15,7 +15,7 @@ function build(argv){
 		argv: argv,
 		dict: {},
 		externalDepends: {},
-		basePath: argv.basepath || path.dirname(mainFile),
+		basePath: argv.basepath ? path.resolve(process.cwd(), argv.basepath) : path.dirname(mainFile),
 		returnName: argv['return'] || path.basename(mainFile, JS_EXT),
 		nameMap: getNameMap(argv),
 		modes: getModes(),
