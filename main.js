@@ -11,7 +11,8 @@ var commentsRE = /(^\/\/)/;
 
 function build(argv){
 	var mainFile = path.resolve(process.cwd(), argv.mainFile);
-	return connectFiles(processFile(mainFile, {
+	var mainFileBaseName = path.basename(mainFile, '.js');
+	return connectFiles(processFile(mainFileBaseName, {
 		argv: argv,
 		dict: {},
 		externalDepends: {},
@@ -126,6 +127,7 @@ function processFile(file, args){
 		});
 		var content = dataArr.slice(start).join(os.EOL);
 		args.dict[file] = {
+			file: file,
 			depends: depends,
 			data: content
 		};
@@ -158,16 +160,29 @@ function findRootNodes(dict){
 	return roots;
 }
 
+function topologySort(dict){
+	var nodes = [];
+	for(var roots = findRootNodes(dict); roots; roots = findRootNodes(dict)){
+		for(file in roots){
+			nodes.push(roots[file]);
+		}
+	}
+	return nodes;
+}
+
 function connectFiles(args){
 	var argv = args.argv;
+	var nodes = args.nodes = topologySort(args.dict);
 	var mode = args.modes[argv.mode || 'amd'];
 	var head = mode ? mode.head(args) : '';
 	var foot = mode ? mode.foot(args) : '';
 	var output = [head];
-	for(var roots = findRootNodes(args.dict); roots; roots = findRootNodes(args.dict)){
-		for(file in roots){
-			output.push(roots[file].data);
-		}
+	if(argv.mode == 'develop'){
+		output.push(fs.readFileSync(__dirname + '/develop.js', 'utf-8'));
+	}else{
+		nodes.forEach(function(node){
+			output.push(node.data);
+		});
 	}
 	output.push(foot);
 	return output.join(os.EOL);
